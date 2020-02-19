@@ -1,0 +1,11 @@
+*.iml
+.idea
+target
+.svn
+.project
+.settings
+.mvn
+overlays
+*@foxmail.com*
+.logs
+logs

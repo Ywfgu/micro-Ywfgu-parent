@@ -1,0 +1,4 @@
+
+ hbase.zookeeper.quorum: hadoop02,hadoop04,hadoop05
+ hbase.zookeeper.property.clientPort: 2181
+ zookeeper.znode.parent: /hbase
