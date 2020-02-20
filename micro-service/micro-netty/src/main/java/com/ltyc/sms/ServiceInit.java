@@ -23,11 +23,11 @@ public class ServiceInit extends Thread  {
     @Override
     public void run() {
 
-        try {
-            testCMPPClientEndpoint();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        try {
+//            testCMPPClientEndpoint();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
     }
 
 

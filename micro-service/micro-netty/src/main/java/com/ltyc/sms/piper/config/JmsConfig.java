@@ -86,42 +86,17 @@ public class JmsConfig{
         return factory;
     }
 
+    @Bean(name = "jmsActiveMQTopicListener")
+    public JmsListenerContainerFactory<?> jmsActiveMQTopicListener(PooledConnectionFactory activeMQConnectionFactory) {
+        DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
+        factory.setConnectionFactory(activeMQConnectionFactory);
+        //设置连接数
+        factory.setConcurrency("1-1");
+        //重连间隔时间
+        factory.setRecoveryInterval(1000L);
+        factory.setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
+        factory.setPubSubDomain(true);
+        return factory;
+    }
 
-//    @Override
-//    public void configureJmsListeners(JmsListenerEndpointRegistrar registrar) {
-//        SimpleJmsListenerEndpoint endpoint = new SimpleJmsListenerEndpoint();
-//        endpoint.setId(getDestination());
-//        endpoint.setDestination(getDestination());
-//        endpoint.setMessageListener(getMessageListener());
-//        registrar.registerEndpoint(endpoint);
-//        registrar.setContainerFactory((JmsListenerContainerFactory)SpringUtil.getBean("jmsActiveMQQueueListener"));
-//        this.setRegistrar(registrar);
-//    }
-//    private JmsListenerEndpointRegistrar registrar=null;
-//    private String destination="";
-//    private MessageListener messageListener=null;
-//
-//    public void setDestination(String destination) {
-//        this.destination = destination;
-//    }
-//
-//    public void setMessageListener(MessageListener messageListener) {
-//        this.messageListener = messageListener;
-//    }
-//
-//    public String getDestination() {
-//        return destination;
-//    }
-//
-//    public MessageListener getMessageListener() {
-//        return messageListener;
-//    }
-//
-//    public JmsListenerEndpointRegistrar getRegistrar() {
-//        return registrar;
-//    }
-//
-//    public void setRegistrar(JmsListenerEndpointRegistrar registrar) {
-//        this.registrar = registrar;
-//    }
 }
