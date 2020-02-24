@@ -89,7 +89,6 @@ public abstract class AbstractEndpointConnector implements EndpointConnector<End
 
     @Override
     public EndpointEntity getEndpointEntity() {
-
         return endpoint;
     }
 
@@ -132,7 +131,6 @@ public abstract class AbstractEndpointConnector implements EndpointConnector<End
 
     @Override
     public int getConnectionNum() {
-
         return conCnt.get();
     }
 
@@ -165,7 +163,6 @@ public abstract class AbstractEndpointConnector implements EndpointConnector<End
 
     @Override
     public void removeChannel(Channel ch) {
-
         if (getChannels().remove(ch)) {
             ch.attr(GlobalConstance.attributeKey).set(SessionState.DisConnect);
             decrementConn();

@@ -56,7 +56,7 @@ public abstract class MessageReceiveHandler extends AbstractBusinessHandler {
                 public boolean notOver(Future future) {
                     return EndpointManager.INS.getEndpointConnector(getEndpointEntity()) != null;
                 }
-            }, rate * 1000*1000);
+            }, rate * 1000);
             inited = true;
         }
         ctx.fireUserEventTriggered(evt);

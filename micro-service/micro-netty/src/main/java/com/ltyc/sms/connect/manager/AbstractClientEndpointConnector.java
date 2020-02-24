@@ -28,8 +28,12 @@ public abstract class AbstractClientEndpointConnector extends AbstractEndpointCo
 
     public AbstractClientEndpointConnector(EndpointEntity endpoint) {
         super(endpoint);
-        bootstrap.group(EventLoopGroupFactory.INS.getWorker()).channel(NioSocketChannel.class).option(ChannelOption.TCP_NODELAY, true)
-                .option(ChannelOption.SO_RCVBUF, 2048).option(ChannelOption.SO_SNDBUF, 2048).option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+        bootstrap.group(EventLoopGroupFactory.INS.getWorker())
+                .channel(NioSocketChannel.class)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.SO_RCVBUF, 2048)
+                .option(ChannelOption.SO_SNDBUF, 2048)
+                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                 .option(ChannelOption.RCVBUF_ALLOCATOR,new FixedRecvByteBufAllocator(1024))
                 .handler(initPipeLine());
     }

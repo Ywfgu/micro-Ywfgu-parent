@@ -32,11 +32,17 @@ public abstract class AbstractServerEndpointConnector extends AbstractEndpointCo
         super(e);
         EventLoopGroupFactory.setBossThreads(e.getAcceptThread());
         EventLoopGroupFactory.setWorkThreads(e.getWorkThread());
-        bootstrap.group(EventLoopGroupFactory.INS.getBoss(), EventLoopGroupFactory.INS.getWorker()).channel(NioServerSocketChannel.class)
-                .option(ChannelOption.SO_BACKLOG, 100).childOption(ChannelOption.SO_RCVBUF, 2048).childOption(ChannelOption.SO_SNDBUF, 2048)
-                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT).childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-                .childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(1024)).childOption(ChannelOption.TCP_NODELAY, true)
-                .handler(new LoggingHandler(LogLevel.DEBUG)).childHandler(initPipeLine());
+        bootstrap.group(EventLoopGroupFactory.INS.getBoss(), EventLoopGroupFactory.INS.getWorker())
+                .channel(NioServerSocketChannel.class)
+                .option(ChannelOption.SO_BACKLOG, 100)
+                .childOption(ChannelOption.SO_RCVBUF, 2048)
+                .childOption(ChannelOption.SO_SNDBUF, 2048)
+                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                .childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(1024))
+                .childOption(ChannelOption.TCP_NODELAY, true)
+                .handler(new LoggingHandler(LogLevel.DEBUG))
+                .childHandler(initPipeLine());
     }
 
     @Override
