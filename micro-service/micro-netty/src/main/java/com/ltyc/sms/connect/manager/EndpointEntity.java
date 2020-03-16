@@ -67,6 +67,9 @@ public abstract class EndpointEntity implements Serializable {
     private boolean isReSendFailMsg = true;
     private short maxRetryCnt = 3;
     private short retryWaitTimeSec=60;
+    /**
+     * 空闲等待时间，默认30s,(空闲指没有写也没有读到数据)
+     */
     private short idleTimeSec = 30;
     boolean closeWhenRetryFailed = true;  //当等待接收response超过最大重试次数，是否关闭channel
     /**

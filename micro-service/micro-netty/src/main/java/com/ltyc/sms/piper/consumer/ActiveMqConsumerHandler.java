@@ -58,13 +58,14 @@ public class ActiveMqConsumerHandler extends AbstractBusinessHandler implements 
     @Override
     public void userEventTriggered(final ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt == SessionState.Connect) {
-            SimpleJmsListenerEndpoint endpoint = new SimpleJmsListenerEndpoint();
-            endpoint.setId("TEST.NETTY.CONSUMER");
-            endpoint.setDestination("TEST.NETTY.CONSUMER");
-            endpoint.setMessageListener(this);
-            JmsListenerManager.LSR.registerListenerContainer(endpoint,true);
-            System.out.println("===================" + getEndpointEntity().getId());
-            System.out.println("===================connect");
+//            SimpleJmsListenerEndpoint endpoint = new SimpleJmsListenerEndpoint();
+//            endpoint.setId("TEST.NETTY.CONSUMER");
+//            endpoint.setDestination("TEST.NETTY.CONSUMER");
+//            endpoint.setMessageListener(this);
+//            JmsListenerManager.LSR.registerListenerContainer(endpoint,true);
+//            System.out.println("===================" + getEndpointEntity().getId());
+//            System.out.println("===================connect");
+            JmsListenerManager.LSR.registerListenerContainer("TEST.NETTY.CONSUMER","TEST.NETTY.CONSUMER",this,true);
             //MessageUtil.dynamicCreateMQConsumer("TEST.NETTY.CONSUMER", "TEST.NETTY.CONSUMER", this.getClass(), "TEST.NETTY.CONSUMER");
         } else if (evt == SessionState.DisConnect){
             JmsListenerManager.LSR.stop(getEndpointEntity().getId());

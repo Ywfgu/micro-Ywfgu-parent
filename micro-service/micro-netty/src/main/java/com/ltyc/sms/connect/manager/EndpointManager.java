@@ -44,6 +44,7 @@ public enum EndpointManager implements EndpointManagerInterface {
 
         EndpointConnector<?> conn = map.get(entity.getId());
         if (conn == null){
+            //在这里将对象和连接器进行关联
             conn = entity.buildConnector();
             map.put(entity.getId(), conn);
         }

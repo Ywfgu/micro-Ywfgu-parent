@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+       http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!--
+    Ignite Spring configuration file.
+    When starting a standalone Ignite node, you need to execute the following command:
+    {IGNITE_HOME}/bin/ignite.{bat|sh} path-to-this-file/default-config.xml
+    When starting Ignite from Java IDE, pass path to this file into Ignition:
+    Ignition.start("path-to-this-file/default-config.xml");
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/util
+       http://www.springframework.org/schema/util/spring-util.xsd">
+
+    <!--
+        Optional description.
+    -->
+    <description>
+        Spring file for Ignite node configuration with IGFS and Apache Hadoop map-reduce support enabled.
+        Ignite node will start with this configuration by default.
+    </description>
+
+    <!--
+        Initialize property configurer so we can reference environment variables.
+    -->
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_FALLBACK"/>
+        <property name="searchSystemEnvironment" value="true"/>
+    </bean>
+
+    <!--
+        Configuration of Ignite node.
+    -->
+    <bean id="grid.cfg" class="org.apache.ignite.configuration.IgniteConfiguration">
+        <!--<property name="peerClassLoadingEnabled" value="true" />-->
+        <!-- 在windows和服务器节点连接时启动后不定时异常,启用此配置来规避此问题,Blocked system-critical thread has been detected. This can lead to cluster-wide undefined behaviour -->
+        <property name="systemWorkerBlockedTimeout" value="#{60 * 60 * 1000}"/>
+        <!--<property name="workDirectory" value="D:\ignite\test"/>-->
+        <!--<property name="rebalanceThreadPoolSize" value="8"/>-->
+        <!-- Set batch size. -->
+        <property name="rebalanceBatchSize" value="#{2 * 1024 * 1024}"/>
+        <!-- Set throttle interval. -->
+        <property name="rebalanceThrottle" value="100"/>
+        <!-- ... -->
+        <!--
+            This port will be used by Apache Hadoop client to connect to Ignite node as if it was a job tracker.
+        
+        <property name="connectorConfiguration">
+            <bean class="org.apache.ignite.configuration.ConnectorConfiguration">
+                <property name="port" value="11211"/>
+            </bean>
+        </property>
+		-->
+
+        <!--
+            Configure one IGFS file system instance named "igfs" on this node.
+        -->
+		
+        <property name="fileSystemConfiguration">
+            <list>
+                <bean class="org.apache.ignite.configuration.FileSystemConfiguration">
+                    <!-- IGFS name you will use to access IGFS through Hadoop API. -->
+                    <property name="name" value="igfs"/>
+
+                    <!-- Configure TCP endpoint for communication with the file system instance. -->
+					<!--
+                    <property name="ipcEndpointConfiguration">
+                        <bean class="org.apache.ignite.igfs.IgfsIpcEndpointConfiguration">
+                            <property name="type" value="TCP" />
+                            <property name="host" value="0.0.0.0" />
+                            <property name="port" value="10500" />
+                        </bean>
+                    </property>
+					-->
+
+                    <!--
+                        Configure secondary file system if needed.
+                    -->
+                    <!--
+                    <property name="secondaryFileSystem">
+                        <bean class="org.apache.ignite.hadoop.fs.IgniteHadoopIgfsSecondaryFileSystem">
+                            <property name="fileSystemFactory">
+                                <bean class="org.apache.ignite.hadoop.fs.CachingHadoopFileSystemFactory">
+                                    <property name="uri" value="hdfs://your_hdfs_host:9000"/>
+                                </bean>
+                            </property>
+                        </bean>
+                    </property>
+                    -->
+                </bean>
+            </list>
+        </property>
+
+        <!-- 缓存定义 -->
+        <property name="cacheConfiguration">
+            <list>
+                <!--原始消息分发异常 表-->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="CMPP_2_SPXM_EXCP"/>
+                    <property name="cacheMode" value="PARTITIONED"/>
+                    <property name="backups" value="1"/>
+                    <property name="atomicityMode" value="TRANSACTIONAL"/>
+                    <property name="expiryPolicyFactory">
+                        <bean class="javax.cache.expiry.CreatedExpiryPolicy" factory-method="factoryOf">
+                            <constructor-arg>
+                                <bean class="javax.cache.expiry.Duration">
+                                    <constructor-arg value="HOURS"/>
+                                    <constructor-arg value="168"/>
+                                </bean>
+                            </constructor-arg>
+                        </bean>
+                    </property>
+                    <property name="queryEntities">
+                        <list>
+                            <bean class="org.apache.ignite.cache.QueryEntity">
+                                <property name="keyType" value="java.lang.String"/>
+                                <property name="keyFieldName" value="traceId"/>
+                                <property name="valueType" value="com.spxm.ignite.model.Cmpp2SpxmExcp"/>
+
+                                <property name="fields">
+                                    <map>
+                                        <entry key="traceId" value="java.lang.String"/>
+                                        <entry key="fwdMsg" value="[B"/>
+                                        <entry key="status" value="java.lang.Integer"/>
+                                        <entry key="statusTime" value="java.lang.Long"/>
+                                        <entry key="vaildTime" value="java.lang.Long"/>
+                                        <entry key="optCount" value="java.lang.Integer"/>
+                                        <entry key="msgTime" value="java.lang.Long"/>
+                                        <entry key="serviceType" value="java.lang.String"/>
+                                        <entry key="fromCmppVersion" value="java.lang.String"/>
+                                    </map>
+                                </property>
+
+                                <property name="indexes">
+                                    <list>
+                                        <bean class="org.apache.ignite.cache.QueryIndex">
+                                            <property name="fields">
+                                                <map>
+                                                    <entry key="traceId" value="true"/>
+                                                </map>
+                                            </property>
+                                        </bean>
+
+                                    </list>
+                                </property>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+
+
+                <!--转发短信和电信、联通消息ID的关联 表-->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="SPXM_SMS_RELATION_ID"/>
+                    <property name="cacheMode" value="PARTITIONED"/>
+                    <property name="backups" value="1"/>
+                    <property name="atomicityMode" value="TRANSACTIONAL"/>
+                    <property name="expiryPolicyFactory">
+                        <bean class="javax.cache.expiry.CreatedExpiryPolicy" factory-method="factoryOf">
+                            <constructor-arg>
+                                <bean class="javax.cache.expiry.Duration">
+                                    <constructor-arg value="HOURS"/>
+                                    <constructor-arg value="168"/>
+                                </bean>
+                            </constructor-arg>
+                        </bean>
+                    </property>
+                    <property name="queryEntities">
+                        <list>
+                            <bean class="org.apache.ignite.cache.QueryEntity">
+                                <property name="keyType" value="com.spxm.ignite.model.SpxmSmsRelationIdDataKey"/>
+                                <property name="valueType" value="com.spxm.ignite.model.SpxmSmsRelationId"/>
+
+                                <property name="keyFields">
+                                    <set>
+                                        <value>sequenceId</value>
+                                        <value>serviceType</value>
+                                    </set>
+                                </property>
+
+                                <property name="fields">
+                                    <map>
+                                        <entry key="sequenceId" value="java.lang.String"/>
+                                        <entry key="serviceType" value="java.lang.String"/>
+                                        <entry key="msgId" value="java.lang.String"/>
+                                        <entry key="fwdMsgId" value="java.lang.Long"/>
+                                        <entry key="fwdPkNumber" value="java.lang.Byte"/>
+                                        <entry key="vaildTime" value="java.lang.Long"/>
+                                    </map>
+                                </property>
+
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+
+                <!--电信/联通短信 收发异常 表-->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="SPXM_2_SMGP_SGIP_DETAIL"/>
+                    <property name="cacheMode" value="PARTITIONED"/>
+                    <property name="backups" value="1"/>
+                    <property name="atomicityMode" value="TRANSACTIONAL"/>
+                    <property name="expiryPolicyFactory">
+                        <bean class="javax.cache.expiry.CreatedExpiryPolicy" factory-method="factoryOf">
+                            <constructor-arg>
+                                <bean class="javax.cache.expiry.Duration">
+                                    <constructor-arg value="HOURS"/>
+                                    <constructor-arg value="168"/>
+                                </bean>
+                            </constructor-arg>
+                        </bean>
+                    </property>
+                    <property name="queryEntities">
+                        <list>
+                            <bean class="org.apache.ignite.cache.QueryEntity">
+                                <property name="keyType" value="java.lang.String"/>
+                                <property name="keyFieldName" value="traceId"/>
+                                <property name="valueType" value="com.spxm.ignite.model.SmSendDetail"/>
+
+                                <property name="fields">
+                                    <map>
+                                        <entry key="traceId" value="java.lang.String"/>
+                                        <entry key="callSendMsg" value="[B"/>
+                                        <entry key="fwdBackMsg" value="[B"/>
+                                        <entry key="step" value="java.lang.Integer"/>
+                                        <entry key="status" value="java.lang.Integer"/>
+                                        <entry key="statusTime" value="java.lang.Long"/>
+                                        <entry key="vaildTime" value="java.lang.Long"/>
+                                        <entry key="optCount" value="java.lang.Integer"/>
+                                        <entry key="msgTime" value="java.lang.Long"/>
+                                        <entry key="serviceType" value="java.lang.String"/>
+                                        <entry key="fromCmppVersion" value="java.lang.String"/>
+                                        <entry key="isEnd" value="java.lang.Integer"/>
+                                    </map>
+                                </property>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+
+                <!--回馈消息发送异常 表-->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="SPXM_2_CMPP_EXCP"/>
+                    <property name="cacheMode" value="PARTITIONED"/>
+                    <property name="backups" value="1"/>
+                    <property name="atomicityMode" value="TRANSACTIONAL"/>
+                    <property name="expiryPolicyFactory">
+                        <bean class="javax.cache.expiry.CreatedExpiryPolicy" factory-method="factoryOf">
+                            <constructor-arg>
+                                <bean class="javax.cache.expiry.Duration">
+                                    <constructor-arg value="HOURS"/>
+                                    <constructor-arg value="168"/>
+                                </bean>
+                            </constructor-arg>
+                        </bean>
+                    </property>
+                    <property name="queryEntities">
+                        <list>
+                            <bean class="org.apache.ignite.cache.QueryEntity">
+                                <property name="keyType" value="java.lang.String"/>
+                                <property name="keyFieldName" value="traceId"/>
+                                <property name="valueType" value="com.spxm.ignite.model.SmFwdBackExcp"/>
+
+                                <property name="fields">
+                                    <map>
+                                        <entry key="traceId" value="java.lang.String"/>
+                                        <entry key="fwdBackMsg" value="[B"/>
+                                        <entry key="status" value="java.lang.Integer"/>
+                                        <entry key="statusTime" value="java.lang.Long"/>
+                                        <entry key="vaildTime" value="java.lang.Long"/>
+                                        <entry key="optCount" value="java.lang.Integer"/>
+                                        <entry key="msgTime" value="java.lang.Long"/>
+                                        <entry key="serviceType" value="java.lang.String"/>
+                                        <entry key="fromCmppVersion" value="java.lang.String"/>
+                                    </map>
+                                </property>
+
+
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+
+            </list>
+        </property>
+
+        <!--
+            TCP discovery SPI can be configured with list of addresses if multicast is not available.
+        -->
+        
+        <property name="discoverySpi">
+            <bean class="org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi">
+                <!--<property name="localAddress" value="172.16.132.178"/>-->
+                <!--<property name="localPort" value="47500"/>-->
+                <!--<property name="localPortRange" value="10"/>-->
+
+                <!-- server重启时客户端自动重连(value时间内服务端若重启客户端会自动重连) -->
+                <property name="networkTimeout" value="15000"/>
+
+                <property name="ipFinder">
+                    <bean class="org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder">
+                        <property name="addresses">
+                            <list>
+                                <value>172.16.132.178:47500..47509</value>
+                                <value>10.8.132.65:47500..47509</value>
+                            </list>
+                        </property>
+                    </bean>
+                </property>
+            </bean>
+        </property>
+
+        <property name="communicationSpi">
+            <bean class="org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi">
+                <!-- Override local port. -->
+                <property name="localPort" value="14025"/>
+                <property name="localPortRange" value="5"/>
+                <!--<property name="connectTimeout" value="#{5000 * 10}"/>-->
+                <!--<property name="maxConnectTimeout" value="#{10 * 60 * 1000}"/>-->
+            </bean>
+        </property>
+        
+    </bean>
+</beans>

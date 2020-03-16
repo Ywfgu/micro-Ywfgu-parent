@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+       http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!--
+    Ignite configuration with all defaults and enabled p2p deployment and enabled events.
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/util
+        http://www.springframework.org/schema/util/spring-util.xsd">
+
+
+    <bean id="ignite.cfg" class="org.apache.ignite.configuration.IgniteConfiguration">
+        <!--Failure detection timeout in milliseconds.-->
+        <property name="failureDetectionTimeout" value="600000"/>
+        <!-- 故障处理 -->
+        <property name="failureHandler">
+            <bean class="org.apache.ignite.failure.StopNodeOrHaltFailureHandler">
+                <constructor-arg value="true"></constructor-arg>
+                <constructor-arg value="600000"></constructor-arg>
+            </bean>
+        </property>
+        <!-- 通过磁盘缓存记录 -->
+        <!--<property name="consistentId" value="000001"/>-->
+        <!--<property name="igniteHome" value="#{systemProperties['user.dir']}/../data/${server.name}"/>-->
+        <property name="dataStorageConfiguration">
+            <bean class="org.apache.ignite.configuration.DataStorageConfiguration">
+
+                <!-- Threads that generate dirty pages too fast during ongoing checkpoint will be throttled -->
+                <property name="writeThrottlingEnabled" value="true"/>
+
+                <!--Checkpointing frequency which is a minimal interval when the dirty pages will be written to the Persistent Store.-->
+                <!-- 检查点频率 -->
+                <property name="checkpointFrequency" value="180000"/>
+
+                <!-- Number of threads for checkpointing.-->
+                <!-- 检查点线程数 -->
+                <property name="checkpointThreads" value="4"/>
+
+                <!-- 在检查点同步完成后预写日志历史保留数量 -->
+                <!-- Number of checkpoints to be kept in WAL after checkpoint is finished. -->
+                <!--<property name="maxWalArchiveSize" value="#{500L * 1024 * 1024}"/>-->
+
+                <!--<property name="walSegmentSize" value="#{200L * 1024 * 1024}"/>-->
+
+                <property name="defaultDataRegionConfiguration">
+                    <bean class="org.apache.ignite.configuration.DataRegionConfiguration">
+                        <property name="name" value="Default_Region"/>
+                        <!-- 设置默认内存区最大内存为 500MB. -->
+                        <property name="maxSize" value="#{500L * 1024 * 1024}"/>
+                        <property name="persistenceEnabled" value="false"/>
+                        <!-- Increasing the buffer size to 1 GB. -->
+                        <!--<property name="checkpointPageBufferSize" value="#{1024L * 1024 * 1024}"/>-->
+                    </bean>
+                </property>
+
+                <property name="dataRegionConfigurations">
+                    <bean class="org.apache.ignite.configuration.DataRegionConfiguration">
+                        <property name="name" value="Persistence_Region"/>
+                        <!-- 设置持久化内存区最大内存为 500MB. -->
+                        <property name="maxSize" value="#{500L * 1024 * 1024}"/>
+                        <property name="persistenceEnabled" value="false"/>
+                    </bean>
+                </property>
+
+                <!-- 设置持久化预写日志模式. -->
+                <property name="walMode">
+                    <util:constant static-field="org.apache.ignite.configuration.WALMode.FSYNC"/>
+                </property>
+                <!-- 最大wal存档大小 -->
+                <property name="maxWalArchiveSize" value="#{1024L * 1024 * 1024}"/>
+
+                <!-- 持久化文件存储路径. -->
+                <!--<property name="storagePath" value="${spxm.cluster.storagePath}"/>-->
+
+                <!-- 预写日志存储路径. -->
+                <!--<property name="walPath" value="${spxm.cluster.storagePath}/db/wal"/>-->
+
+                <!-- 预写日志解压路径. -->
+                <!-- <property name="walArchivePath" value="${spxm.cluster.storagePath}/db/wal/archive"/>-->
+
+                <property name="checkpointReadLockTimeout" value="10000"/>
+            </bean>
+        </property>
+
+        <!-- 缓存定义 -->
+        <property name="cacheConfiguration">
+            <list>
+                <!--原始消息分发异常 表-->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="CMPP_2_SPXM_EXCP"/>
+                    <property name="cacheMode" value="PARTITIONED"/>
+                    <property name="backups" value="1"/>
+                    <property name="atomicityMode" value="TRANSACTIONAL"/>
+                    <property name="expiryPolicyFactory">
+                        <bean class="javax.cache.expiry.CreatedExpiryPolicy" factory-method="factoryOf">
+                            <constructor-arg>
+                                <bean class="javax.cache.expiry.Duration">
+                                    <constructor-arg value="HOURS"/>
+                                    <constructor-arg value="168"/>
+                                </bean>
+                            </constructor-arg>
+                        </bean>
+                    </property>
+                    <property name="queryEntities">
+                        <list>
+                            <bean class="org.apache.ignite.cache.QueryEntity">
+                                <property name="keyType" value="java.lang.String"/>
+                                <property name="keyFieldName" value="traceId"/>
+                                <property name="valueType" value="com.spxm.ignite.model.Cmpp2SpxmExcp"/>
+
+                                <property name="fields">
+                                    <map>
+                                        <entry key="traceId" value="java.lang.String"/>
+                                        <entry key="fwdMsg" value="[B"/>
+                                        <entry key="status" value="java.lang.Integer"/>
+                                        <entry key="statusTime" value="java.lang.Long"/>
+                                        <entry key="vaildTime" value="java.lang.Long"/>
+                                        <entry key="optCount" value="java.lang.Integer"/>
+                                        <entry key="msgTime" value="java.lang.Long"/>
+                                        <entry key="serviceType" value="java.lang.String"/>
+                                        <entry key="fromCmppVersion" value="java.lang.String"/>
+                                    </map>
+                                </property>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+
+
+                <!--转发短信和电信、联通消息ID的关联 表-->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="SPXM_SMS_RELATION_ID"/>
+                    <property name="cacheMode" value="PARTITIONED"/>
+                    <property name="backups" value="1"/>
+                    <property name="atomicityMode" value="TRANSACTIONAL"/>
+                    <property name="expiryPolicyFactory">
+                        <bean class="javax.cache.expiry.CreatedExpiryPolicy" factory-method="factoryOf">
+                            <constructor-arg>
+                                <bean class="javax.cache.expiry.Duration">
+                                    <constructor-arg value="HOURS"/>
+                                    <constructor-arg value="168"/>
+                                </bean>
+                            </constructor-arg>
+                        </bean>
+                    </property>
+                    <property name="queryEntities">
+                        <list>
+                            <bean class="org.apache.ignite.cache.QueryEntity">
+                                <property name="keyType" value="com.spxm.ignite.model.SpxmSmsRelationIdDataKey"/>
+                                <property name="valueType" value="com.spxm.ignite.model.SpxmSmsRelationId"/>
+
+                                <property name="keyFields">
+                                    <set>
+                                        <value>sequenceId</value>
+                                        <value>serviceType</value>
+                                    </set>
+                                </property>
+
+                                <property name="fields">
+                                    <map>
+                                        <entry key="sequenceId" value="java.lang.String"/>
+                                        <entry key="serviceType" value="java.lang.String"/>
+                                        <entry key="msgId" value="java.lang.String"/>
+                                        <entry key="fwdMsgId" value="java.lang.Long"/>
+                                        <entry key="fwdPkNumber" value="java.lang.Byte"/>
+                                        <entry key="vaildTime" value="java.lang.Long"/>
+                                    </map>
+                                </property>
+
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+
+                <!--电信/联通短信 收发异常 表-->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="SPXM_2_SMGP_SGIP_DETAIL"/>
+                    <property name="cacheMode" value="PARTITIONED"/>
+                    <property name="backups" value="1"/>
+                    <property name="atomicityMode" value="TRANSACTIONAL"/>
+                    <property name="expiryPolicyFactory">
+                        <bean class="javax.cache.expiry.CreatedExpiryPolicy" factory-method="factoryOf">
+                            <constructor-arg>
+                                <bean class="javax.cache.expiry.Duration">
+                                    <constructor-arg value="HOURS"/>
+                                    <constructor-arg value="168"/>
+                                </bean>
+                            </constructor-arg>
+                        </bean>
+                    </property>
+                    <property name="queryEntities">
+                        <list>
+                            <bean class="org.apache.ignite.cache.QueryEntity">
+                                <property name="keyType" value="java.lang.String"/>
+                                <property name="keyFieldName" value="traceId"/>
+                                <property name="valueType" value="com.spxm.ignite.model.SmSendDetail"/>
+
+                                <property name="fields">
+                                    <map>
+                                        <entry key="traceId" value="java.lang.String"/>
+                                        <entry key="callSendMsg" value="[B"/>
+                                        <entry key="fwdBackMsg" value="[B"/>
+                                        <entry key="step" value="java.lang.Integer"/>
+                                        <entry key="status" value="java.lang.Integer"/>
+                                        <entry key="statusTime" value="java.lang.Long"/>
+                                        <entry key="vaildTime" value="java.lang.Long"/>
+                                        <entry key="optCount" value="java.lang.Integer"/>
+                                        <entry key="msgTime" value="java.lang.Long"/>
+                                        <entry key="serviceType" value="java.lang.String"/>
+                                        <entry key="fromCmppVersion" value="java.lang.String"/>
+                                        <entry key="isEnd" value="java.lang.Integer"/>
+                                    </map>
+                                </property>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+
+                <!--回馈消息发送异常 表-->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="SPXM_2_CMPP_EXCP"/>
+                    <property name="cacheMode" value="PARTITIONED"/>
+                    <property name="backups" value="1"/>
+                    <property name="atomicityMode" value="TRANSACTIONAL"/>
+                    <property name="expiryPolicyFactory">
+                        <bean class="javax.cache.expiry.CreatedExpiryPolicy" factory-method="factoryOf">
+                            <constructor-arg>
+                                <bean class="javax.cache.expiry.Duration">
+                                    <constructor-arg value="HOURS"/>
+                                    <constructor-arg value="168"/>
+                                </bean>
+                            </constructor-arg>
+                        </bean>
+                    </property>
+                    <property name="queryEntities">
+                        <list>
+                            <bean class="org.apache.ignite.cache.QueryEntity">
+                                <property name="keyType" value="java.lang.String"/>
+                                <property name="keyFieldName" value="traceId"/>
+                                <property name="valueType" value="com.spxm.ignite.model.SmFwdBackExcp"/>
+
+                                <property name="fields">
+                                    <map>
+                                        <entry key="traceId" value="java.lang.String"/>
+                                        <entry key="fwdBackMsg" value="[B"/>
+                                        <entry key="status" value="java.lang.Integer"/>
+                                        <entry key="statusTime" value="java.lang.Long"/>
+                                        <entry key="vaildTime" value="java.lang.Long"/>
+                                        <entry key="optCount" value="java.lang.Integer"/>
+                                        <entry key="msgTime" value="java.lang.Long"/>
+                                        <entry key="serviceType" value="java.lang.String"/>
+                                        <entry key="fromCmppVersion" value="java.lang.String"/>
+                                    </map>
+                                </property>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+
+
+            </list>
+        </property>
+
+        <!-- Explicitly configure TCP discovery SPI to provide list of initial nodes. -->
+        <property name="discoverySpi">
+            <bean class="org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi">
+                <property name="localAddress" value="127.0.0.1"/>
+                <property name="localPort" value="14020"/>
+                <property name="localPortRange" value="5"/>
+                <!--统计输出的频率（毫秒），0意味着不需要输出。如果值大于0那么日志就会激活，然后每隔一段时间就会以INFO级别输出一个状态，这对于跟踪网络拓扑的问题非常有用。-->
+                <property name="statisticsPrintFrequency" value="60000"/>
+                <!-- Timeout that defines how long server node would try to recovery connection -->
+                <property name="connectionRecoveryTimeout" value="300000"/>
+
+                <property name="ipFinder">
+                    <bean class="org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder">
+                        <property name="addresses">
+                            <list>
+                                <value>127.0.0.1:14020..14025</value>
+                                <!--<value>10.8.132.65:47500..47509</value>-->
+                            </list>
+                        </property>
+                    </bean>
+                </property>
+            </bean>
+        </property>
+
+        <property name="communicationSpi">
+            <bean class="org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi">
+                <!-- Override local port. -->
+                <property name="localPort" value="14025"/>
+                <property name="localPortRange" value="5"/>
+                <property name="connectTimeout" value="120000"/>
+                <property name="maxConnectTimeout" value="300000"/>
+            </bean>
+        </property>
+
+        <!-- 显示地启用缓存事件 -->
+        <property name="includeEventTypes">
+            <list>
+                <util:constant static-field="org.apache.ignite.events.EventType.EVT_CACHE_OBJECT_PUT"/>
+                <util:constant static-field="org.apache.ignite.events.EventType.EVT_CACHE_OBJECT_REMOVED"/>
+                <util:constant static-field="org.apache.ignite.events.EventType.EVT_NODE_FAILED"/>
+                <util:constant static-field="org.apache.ignite.events.EventType.EVT_NODE_JOINED"/>
+                <util:constant static-field="org.apache.ignite.events.EventType.EVT_NODE_LEFT"/>
+                <util:constant static-field="org.apache.ignite.events.EventType.EVT_CLIENT_NODE_RECONNECTED"/>
+            </list>
+        </property>
+    </bean>
+
+</beans>
